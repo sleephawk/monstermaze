@@ -80,7 +80,7 @@ function create() {
 
   // Monsters
   gameState.monsters = this.physics.add.group();
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 40; i++) {
     const monsterPos = getSafeSpawn(this, 32, 32);
     const monster = gameState.monsters.create(
       monsterPos.x,
