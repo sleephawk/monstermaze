@@ -2,6 +2,7 @@ import Phaser from "phaser";
 
 const gameState = {};
 
+/*--------PRELOAD-----------*/
 function preload() {
   this.load.image("man-left", "Assets/man-left.png");
   this.load.image("man-right", "Assets/man-right.png");
@@ -9,6 +10,8 @@ function preload() {
   this.load.image("disc", "Assets/disc.png"); // load disc
   this.load.audio("bgm", "Assets/music/darkwoods.wav");
 }
+
+/*--------CREATE-----------*/
 
 function create() {
   const sceneW = 4000;
@@ -108,7 +111,7 @@ function create() {
   // 🎯 Disc collectible
   const discPos = getSafeSpawn(this, 32, 32);
   gameState.disc = this.physics.add.sprite(discPos.x, discPos.y, "disc");
-  gameState.disc.setScale(0.5);
+  gameState.disc.setScale(2);
 
   this.physics.add.overlap(gameState.man, gameState.disc, () => {
     // generate two random colors
