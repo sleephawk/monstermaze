@@ -108,7 +108,7 @@ function create() {
   // Monsters collide with each other
   this.physics.add.collider(gameState.monsters, gameState.monsters);
 
-  // Restart scene on collision with monster
+  // Restart scene on collision with monster (increments level)
   this.physics.add.collider(gameState.man, gameState.monsters, () => {
     gameState.level += 1;
     this.scene.restart();
@@ -142,9 +142,9 @@ function create() {
   this.cameras.main.startFollow(gameState.man, true, 0.1, 0.1);
   this.cameras.main.setBounds(0, 0, sceneW, sceneH);
 
-  // Reset button
+  // 🔘 Reset button (y = 50)
   const resetButton = this.add
-    .text(20, 20, "RESET", {
+    .text(20, 50, "RESET", {
       font: "24px Arial",
       fill: "#ffffff",
       backgroundColor: "#000000",
@@ -154,13 +154,12 @@ function create() {
     .setInteractive();
 
   resetButton.on("pointerdown", () => {
-    gameState.level += 1;
-    this.scene.restart();
+    this.scene.restart(); // level does NOT increment here
   });
 
-  // Level display
+  // Level display (y = 50)
   gameState.levelText = this.add
-    .text(150, 20, `Level: ${gameState.level}`, {
+    .text(150, 50, `Level: ${gameState.level}`, {
       font: "24px Arial",
       fill: "#ffffff",
     })
