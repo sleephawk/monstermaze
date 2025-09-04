@@ -1,17 +1,16 @@
 import Phaser from "phaser";
 
-const gameState = {};
+const gameState = {
+  level: 1,
+};
 
-/*--------PRELOAD-----------*/
 function preload() {
   this.load.image("man-left", "Assets/man-left.png");
   this.load.image("man-right", "Assets/man-right.png");
   this.load.image("monster", "Assets/monster.png");
-  this.load.image("disc", "Assets/disc.png"); // load disc
+  this.load.image("disc", "Assets/disc.png");
   this.load.audio("bgm", "Assets/music/darkwoods.wav");
 }
-
-/*--------CREATE-----------*/
 
 function create() {
   const sceneW = 4000;
@@ -19,9 +18,11 @@ function create() {
 
   this.physics.world.setBounds(0, 0, sceneW, sceneH);
 
-  // Play music
-  gameState.music = this.sound.add("bgm", { volume: 0.5, loop: true });
-  gameState.music.play();
+  // Play background music
+  if (!gameState.music) {
+    gameState.music = this.sound.add("bgm", { volume: 0.5, loop: true });
+    gameState.music.play();
+  }
 
   // Walls
   gameState.walls = [];
@@ -33,11 +34,10 @@ function create() {
 
     const wall = this.add.rectangle(x, y, w, h, 0xffbf00);
     this.physics.add.existing(wall, true);
-
     gameState.walls.push(wall);
   }
 
-  // Safe spawn helper
+  // Helper: safe spawn positions
   function getSafeSpawn(scene, w = 50, h = 50) {
     let tries = 0;
     while (tries < 1000) {
@@ -60,7 +60,6 @@ function create() {
           break;
         }
       }
-
       if (!overlap) return { x, y };
       tries++;
     }
@@ -73,14 +72,14 @@ function create() {
   gameState.man.setCollideWorldBounds(true);
   gameState.man.setScale(0.5);
 
-  // Collisions: man vs walls
+  // Player vs walls collision
   gameState.walls.forEach((wall) => {
     this.physics.add.collider(gameState.man, wall);
   });
 
   // Monsters
   gameState.monsters = this.physics.add.group();
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 20; i++) {
     const monsterPos = getSafeSpawn(this, 32, 32);
     const monster = gameState.monsters.create(
       monsterPos.x,
@@ -94,39 +93,44 @@ function create() {
       Phaser.Math.Between(-100, 100),
       Phaser.Math.Between(-100, 100)
     );
-    monster.setScale(0.5);
+
+    // Scale increases by 0.5 each level
+    monster.setScale(0.5 + (gameState.level - 1) * 0.5);
   }
 
-  // Collisions
+  // Monsters collide with walls
   gameState.walls.forEach((wall) => {
     gameState.monsters.children.each((monster) => {
       this.physics.add.collider(monster, wall);
     });
   });
+
+  // Monsters collide with each other
   this.physics.add.collider(gameState.monsters, gameState.monsters);
+
+  // Restart scene on collision with monster
   this.physics.add.collider(gameState.man, gameState.monsters, () => {
+    gameState.level += 1;
     this.scene.restart();
   });
 
-  // 🎯 Disc collectible
+  // Disc collectible
   const discPos = getSafeSpawn(this, 32, 32);
   gameState.disc = this.physics.add.sprite(discPos.x, discPos.y, "disc");
-  gameState.disc.setScale(2);
+  gameState.disc.setScale(0.5);
 
   this.physics.add.overlap(gameState.man, gameState.disc, () => {
-    // generate two random colors
+    // Random colors
     const color1 = Phaser.Display.Color.RandomRGB().color;
     const color2 = Phaser.Display.Color.RandomRGB().color;
 
-    // set walls to color1
+    // Apply colors
     gameState.walls.forEach((wall) => {
       wall.fillColor = color1;
     });
-
-    // set background to color2
     this.cameras.main.setBackgroundColor(color2);
 
-    // move disc to new safe position
+    // Move disc to new safe position
     const newPos = getSafeSpawn(this, 32, 32);
     gameState.disc.setPosition(newPos.x, newPos.y);
   });
@@ -137,6 +141,30 @@ function create() {
   // Camera
   this.cameras.main.startFollow(gameState.man, true, 0.1, 0.1);
   this.cameras.main.setBounds(0, 0, sceneW, sceneH);
+
+  // Reset button
+  const resetButton = this.add
+    .text(20, 20, "RESET", {
+      font: "24px Arial",
+      fill: "#ffffff",
+      backgroundColor: "#000000",
+      padding: { x: 10, y: 5 },
+    })
+    .setScrollFactor(0)
+    .setInteractive();
+
+  resetButton.on("pointerdown", () => {
+    gameState.level += 1;
+    this.scene.restart();
+  });
+
+  // Level display
+  gameState.levelText = this.add
+    .text(150, 20, `Level: ${gameState.level}`, {
+      font: "24px Arial",
+      fill: "#ffffff",
+    })
+    .setScrollFactor(0);
 }
 
 function update() {
@@ -158,6 +186,11 @@ function update() {
   } else if (btns.down.isDown) {
     man.setVelocityY(200);
   }
+
+  // Update level display
+  if (gameState.levelText) {
+    gameState.levelText.setText(`Level: ${gameState.level}`);
+  }
 }
 
 const config = {
@@ -167,9 +200,7 @@ const config = {
   backgroundColor: 0x1c1c1c,
   physics: {
     default: "arcade",
-    arcade: {
-      debug: false,
-    },
+    arcade: { debug: false },
   },
   scene: { preload, create, update },
 };
